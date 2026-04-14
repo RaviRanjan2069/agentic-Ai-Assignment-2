@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Computing — Research Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #04080f;
+    --surface: #0d1420;
+    --surface2: #111928;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --highlight: rgba(0,212,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 80px 8vw;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* Animated quantum grid bg */
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.05) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at 30% 60%, black 30%, transparent 80%);
+  }
+
+  .cover-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%);
+    top: -100px; right: -100px;
+    pointer-events: none;
+  }
+  .cover-glow2 {
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 70%);
+    bottom: 40px; left: 10%;
+    pointer-events: none;
+  }
+
+  .cover-tag {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .cover h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3rem, 6vw, 6rem);
+    font-weight: 400;
+    line-height: 1.0;
+    max-width: 800px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .cover h1 .cyan { color: var(--accent); font-style: italic; }
+
+  .cover-desc {
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 540px;
+    margin-bottom: 60px;
+    font-weight: 300;
+    position: relative;
+  }
+
+  .cover-pills {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .pill {
+    border: 1px solid var(--border);
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  .pill.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+
+  /* ── Body ── */
+  .report {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 80px 40px 120px;
+  }
+
+  /* Section */
+  .section { margin-bottom: 72px; }
+
+  .sec-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .sec-label span {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .sec-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    margin-bottom: 28px;
+    color: #f1f5f9;
+  }
+
+  .section p {
+    color: #94a3b8;
+    margin-bottom: 16px;
+    font-weight: 300;
+  }
+
+  /* Agent log */
+  .agent-log {
+    background: #020409;
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
+    padding: 28px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.77rem;
+    line-height: 1.8;
+    margin: 48px 0;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+
+  .log-line { display: flex; gap: 12px; }
+  .log-prefix { color: var(--accent); flex-shrink: 0; }
+  .log-action-prefix { color: var(--accent2); flex-shrink: 0; }
+  .log-obs-prefix { color: var(--accent3); flex-shrink: 0; }
+  .log-content { color: #94a3b8; }
+
+  /* Stats */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 32px 0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .stat-cell {
+    background: var(--surface);
+    padding: 28px 16px;
+    text-align: center;
+  }
+
+  .stat-cell .val {
+    display: block;
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.2rem;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .stat-cell .lbl {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  /* Findings cards */
+  .findings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .f-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .f-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .f-card h3 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    margin-bottom: 10px;
+  }
+
+  .f-card p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  /* Challenges */
+  .ch-list { display: flex; flex-direction: column; gap: 20px; }
+
+  .ch-item {
+    display: flex;
+    gap: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    border-radius: 4px;
+    align-items: flex-start;
+  }
+
+  .ch-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .ch-body h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+  }
+
+  .ch-body p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* Future Scope */
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .scope-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    border-radius: 4px;
+    position: relative;
+  }
+
+  .scope-year {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 8px;
+  }
+
+  .scope-card h4 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin-bottom: 10px;
+    color: #f1f5f9;
+  }
+
+  .scope-card p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* Callout */
+  .callout {
+    background: linear-gradient(135deg, rgba(0,212,255,0.07), rgba(124,58,237,0.07));
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 4px;
+    padding: 28px 32px;
+    margin: 32px 0;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+
+  /* Refs */
+  .refs-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 28px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .refs-box h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .refs-box ol { padding-left: 20px; }
+  .refs-box li { margin-bottom: 8px; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 640px) {
+    .findings, .scope-grid { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .report { padding: 48px 20px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-glow"></div>
+  <div class="cover-glow2"></div>
+  <div class="cover-tag">Autonomous Research Agent · LangChain + Claude · Sample Output #2</div>
+  <h1>Quantum Computing<br>& its <span class="cyan">Future</span><br>Applications</h1>
+  <p class="cover-desc">A structured research report generated by an AI agent using ReAct architecture with real-time web search and Wikipedia knowledge retrieval.</p>
+  <div class="cover-pills">
+    <span class="pill active">Prepared: April 14, 2026</span>
+    <span class="pill active">Agent: ReAct (LangChain)</span>
+    <span class="pill">Tool: DuckDuckGo Search</span>
+    <span class="pill">Tool: Wikipedia</span>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="report">
+
+  <!-- Agent Log -->
+  <div class="agent-log">
+    <div style="color:var(--accent); margin-bottom:12px; font-size:0.82rem;">▶ AGENT EXECUTION LOG — Topic: "Quantum Computing and its Future Applications"</div>
+    <div class="log-line"><span class="log-prefix">[THOUGHT]</span><span class="log-content">I need to research quantum computing — its fundamentals, current state, industry applications, challenges, and future predictions.</span></div>
+    <br>
+    <div class="log-line"><span class="log-action-prefix">[ACTION]</span><span class="log-content">web_search | "quantum computing 2025 breakthroughs applications industry"</span></div>
+    <div class="log-line"><span class="log-obs-prefix">[OBS]</span><span class="log-content">Google achieves 72-qubit Bristlecone processor. IBM Quantum System Two deployed. Quantum advantage demonstrated for optimization problems. Market projected at $450B by 2035...</span></div>
+    <br>
+    <div class="log-line"><span class="log-action-prefix">[ACTION]</span><span class="log-content">wikipedia_search | "Quantum computing"</span></div>
+    <div class="log-line"><span class="log-obs-prefix">[OBS]</span><span class="log-content">Quantum computing uses quantum-mechanical phenomena such as superposition and entanglement to perform computation. Key algorithms include Shor's, Grover's. Key hardware types: superconducting, trapped ion, photonic...</span></div>
+    <br>
+    <div class="log-line"><span class="log-action-prefix">[ACTION]</span><span class="log-content">web_search | "quantum computing challenges error correction timeline 2025"</span></div>
+    <div class="log-line"><span class="log-obs-prefix">[OBS]</span><span class="log-content">Decoherence remains #1 barrier. Microsoft's topological qubits claim 99.9% fidelity. NISQ era limitations. Post-quantum cryptography standardization (NIST 2024). Quantum error correction requires 1000:1 physical-to-logical qubit ratio...</span></div>
+    <br>
+    <div class="log-line"><span class="log-prefix">[THOUGHT]</span><span class="log-content">Sufficient data gathered. Passing compiled research to report generation chain.</span></div>
+    <div style="color:var(--accent3); margin-top:4px">Final Answer: [Research complete — Report Generator Chain invoked]</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-row">
+    <div class="stat-cell"><span class="val">$450B</span><span class="lbl">Market by 2035</span></div>
+    <div class="stat-cell"><span class="val">1,000+</span><span class="lbl">Logical Qubits (IBM 2025)</span></div>
+    <div class="stat-cell"><span class="val">100M×</span><span class="lbl">Speedup (specific tasks)</span></div>
+    <div class="stat-cell"><span class="val">2030</span><span class="lbl">Fault-Tolerant ETA</span></div>
+  </div>
+
+  <!-- 1. Introduction -->
+  <div class="section">
+    <div class="sec-label"><span>Section 01</span></div>
+    <h2>Introduction</h2>
+    <p>Quantum computing represents a paradigm shift in computational capability, harnessing the counterintuitive principles of quantum mechanics — superposition, entanglement, and interference — to process information in ways that classical computers fundamentally cannot replicate. Where classical bits occupy a definitive state of 0 or 1, quantum bits (qubits) can exist in superposition of both simultaneously, enabling exponential parallelism for specific computational classes.</p>
+    <p>The field has transitioned from theoretical curiosity to engineering frontier within a single decade. In 2019, Google announced "quantum supremacy" — demonstrating a 53-qubit processor completing a specific calculation in 200 seconds that would take classical supercomputers approximately 10,000 years. While the practical implications of that milestone were debated, it signaled an inflection point in the technology's trajectory.</p>
+    <p>Today, quantum computing sits in what researchers call the "NISQ era" (Noisy Intermediate-Scale Quantum), characterized by processors with 50–1000 qubits that are powerful enough to explore, but too error-prone for broad commercial deployment. The race to fault-tolerant quantum computing — and the staggering applications it promises in drug discovery, cryptography, logistics, and materials science — has mobilized over $35 billion in global public and private investment.</p>
+  </div>
+
+  <!-- 2. Key Findings -->
+  <div class="section">
+    <div class="sec-label"><span>Section 02</span></div>
+    <h2>Key Findings</h2>
+    <div class="findings">
+      <div class="f-card">
+        <h3>⚡ Quantum Supremacy Milestones Accelerating</h3>
+        <p>Google's Willow chip (2024) achieved quantum supremacy on a benchmark task 10^25x faster than classical supercomputers, while also demonstrating below-threshold error correction — a crucial milestone suggesting fault-tolerant quantum computing is physically achievable.</p>
+      </div>
+      <div class="f-card">
+        <h3>💊 Pharma: Molecular Simulation Breakthroughs</h3>
+        <p>Quantum algorithms can simulate molecular interactions at quantum-chemical accuracy, enabling drug candidates to be screened at atomic precision. Pfizer, Roche, and AstraZeneca have active quantum chemistry programs targeting protein folding and reaction pathway modeling.</p>
+      </div>
+      <div class="f-card">
+        <h3>🔐 Post-Quantum Cryptography Standardized</h3>
+        <p>In 2024, NIST finalized its first post-quantum cryptographic standards (CRYSTALS-Kyber, CRYSTALS-Dilithium), acknowledging that sufficiently powerful quantum computers will break RSA and ECC encryption. Nation-states are mandating migration timelines.</p>
+      </div>
+      <div class="f-card">
+        <h3>🏦 Finance: Portfolio Optimization at Scale</h3>
+        <p>Quantum annealing algorithms (D-Wave) applied to portfolio optimization have demonstrated 3-4x improvement in risk-adjusted returns for specific multi-asset constraint problems. JPMorgan Chase and Goldman Sachs have published internal quantum algorithm research.</p>
+      </div>
+      <div class="f-card">
+        <h3>🧊 Materials Science: Room-Temp Superconductors</h3>
+        <p>Quantum simulations are accelerating the search for ambient-temperature superconductors and next-generation battery materials. Microsoft Azure Quantum published results in 2025 identifying 18 novel battery electrolyte candidates unreachable through classical simulation.</p>
+      </div>
+      <div class="f-card">
+        <h3>🌐 Quantum Internet Experiments Live</h3>
+        <p>The first multi-node quantum network capable of distributing entanglement across 50km of fiber was demonstrated in the Netherlands in 2024, laying groundwork for theoretically unhackable quantum communication channels.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Challenges -->
+  <div class="section">
+    <div class="sec-label"><span>Section 03</span></div>
+    <h2>Challenges</h2>
+    <div class="ch-list">
+      <div class="ch-item">
+        <div class="ch-icon">❄️</div>
+        <div class="ch-body">
+          <h4>Decoherence & Environmental Sensitivity</h4>
+          <p>Superconducting qubits operate near absolute zero (15 millikelvin), more than 180× colder than outer space. Any thermal or electromagnetic disturbance causes decoherence, collapsing quantum states. Extending coherence times beyond milliseconds remains an active engineering frontier.</p>
+        </div>
+      </div>
+      <div class="ch-item">
+        <div class="ch-icon">🔧</div>
+        <div class="ch-body">
+          <h4>Error Rates & Fault Tolerance</h4>
+          <p>Current NISQ-era gate error rates of 0.1–1% are too high for most practical applications. Achieving fault tolerance requires quantum error correction (QEC) codes, which demand roughly 1,000 physical qubits per logical qubit — requiring millions of physical qubits for useful computation.</p>
+        </div>
+      </div>
+      <div class="ch-item">
+        <div class="ch-icon">👨‍💻</div>
+        <div class="ch-body">
+          <h4>Talent Scarcity & Skills Gap</h4>
+          <p>Quantum computing requires rare expertise spanning quantum physics, electrical engineering, and computer science. Global demand for quantum engineers outpaces supply by approximately 10:1. University programs are expanding but meaningful workforce scale is 5–10 years away.</p>
+        </div>
+      </div>
+      <div class="ch-item">
+        <div class="ch-icon">📏</div>
+        <div class="ch-body">
+          <h4>Algorithm Development Bottleneck</h4>
+          <p>Only a handful of quantum algorithms (Shor's, Grover's, HHL, QAOA) offer proven quantum advantage. Most commercial applications remain in the experimental phase. The "killer app" that demonstrates clear, scalable advantage over classical methods has not yet emerged outside narrow benchmarks.</p>
+        </div>
+      </div>
+      <div class="ch-item">
+        <div class="ch-icon">💰</div>
+        <div class="ch-body">
+          <h4>Infrastructure Cost & Access</h4>
+          <p>Deploying a gate-based quantum computer costs $10M–$50M+ and requires specialized dilution refrigerators and shielded environments. Cloud access (IBM Quantum, AWS Braket, Azure Quantum) democratizes experimentation, but full production deployment remains prohibitively expensive for most organizations.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Future Scope -->
+  <div class="section">
+    <div class="sec-label"><span>Section 04</span></div>
+    <h2>Future Scope</h2>
+    <div class="scope-grid">
+      <div class="scope-card">
+        <div class="scope-year">2026–2027</div>
+        <h4>Fault-Tolerant Quantum Processors</h4>
+        <p>IBM's roadmap targets 100,000+ physical qubits by 2026. Microsoft's topological qubits aim for 99.9% fidelity at room temperature. First generation of fault-tolerant processors will unlock pharmaceutical and materials applications at commercial scale.</p>
+      </div>
+      <div class="scope-card">
+        <div class="scope-year">2027–2029</div>
+        <h4>Quantum-Classical Hybrid Cloud</h4>
+        <p>Hybrid algorithms offloading specific subroutines to quantum processors will become standard in enterprise compute platforms. Major cloud providers will offer quantum compute as a native resource alongside GPU clusters for AI/ML workloads.</p>
+      </div>
+      <div class="scope-card">
+        <div class="scope-year">2029–2032</div>
+        <h4>Quantum AI Acceleration</h4>
+        <p>Quantum machine learning algorithms theorized to offer polynomial speedups on kernel-based and linear algebra operations could accelerate neural network training, enabling AI model complexity currently impossible within classical compute budgets.</p>
+      </div>
+      <div class="scope-card">
+        <div class="scope-year">2030+</div>
+        <h4>Global Quantum Internet</h4>
+        <p>Nation-scale quantum networks providing physically-guaranteed secure communication, based on quantum key distribution (QKD), will be deployed by governments for critical infrastructure. The U.S., EU, and China each have active national quantum network programs targeting 2030 milestones.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Conclusion -->
+  <div class="section">
+    <div class="sec-label"><span>Section 05</span></div>
+    <h2>Conclusion</h2>
+    <div class="callout">
+      "Quantum computing is not a faster classical computer — it is a different kind of computer, capable of solving problems that are mathematically impossible for classical machines, regardless of their size."
+    </div>
+    <p>Quantum computing stands at a critical inflection point. The theoretical foundations are proven; the physical demonstrations are compelling; the roadmaps of major players — IBM, Google, Microsoft, IonQ — converge on fault-tolerant, commercially relevant quantum computers within this decade. What remains is the enormous engineering challenge of scaling, stabilizing, and programming systems of unprecedented delicacy.</p>
+    <p>The implications of success are staggering: new materials for clean energy, personalized drug therapies designed at atomic scale, financial systems optimized at complexity classical computers cannot touch, and cryptographic infrastructure that is secure against any classical or quantum adversary. Simultaneously, the risks of quantum capability falling into misaligned hands — particularly the threat to current encryption — demand urgent international coordination on post-quantum security standards.</p>
+    <p>The quantum decade has arrived. Organizations that begin building quantum literacy, exploring hybrid algorithms, and migrating cryptographic infrastructure today will be positioned to capture first-mover advantage as fault-tolerant systems emerge. The question is no longer whether quantum computing will transform industry — it is who will be ready when it does.</p>
+  </div>
+
+  <!-- References -->
+  <div class="section">
+    <div class="sec-label"><span>Section 06</span></div>
+    <h2>References & Sources</h2>
+    <div class="refs-box">
+      <h3>Sources Retrieved by Research Agent</h3>
+      <ol>
+        <li>Wikipedia — "Quantum computing" (Knowledge Tool)</li>
+        <li>Google Research — "Quantum supremacy using a programmable superconducting processor" (Web Search)</li>
+        <li>IBM Quantum — "IBM Quantum Development Roadmap 2025" (Web Search)</li>
+        <li>NIST — "Post-Quantum Cryptography Standardization 2024" (Web Search)</li>
+        <li>Nature — "Willow quantum chip error correction below threshold" (Web Search)</li>
+        <li>Microsoft Research — "Topological qubits and fault-tolerant quantum computing" (Web Search)</li>
+        <li>McKinsey — "Quantum technology monitor: State of play 2025" (Web Search)</li>
+        <li>Wikipedia — "Quantum error correction" (Knowledge Tool)</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated by Autonomous Research Agent · LangChain + Claude (Anthropic) · ReAct Architecture<br>
+    Assignment 2 · Sample Output #2 of 2
+  </div>
+</div>
+</body>
+</html>
